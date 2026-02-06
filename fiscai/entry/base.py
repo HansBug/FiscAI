@@ -1,3 +1,45 @@
+"""
+Base entry point utilities for FiscAI CLI applications.
+
+This module provides foundational components for building Click-based command-line
+interfaces with standardized error handling, exception management, and user feedback
+mechanisms. It serves as the core infrastructure for all FiscAI CLI commands.
+
+The module contains the following main components:
+
+* :class:`ClickWarningException` - Warning-level exception with yellow output
+* :class:`ClickErrorException` - Error-level exception with red output
+* :class:`KeyboardInterrupted` - Graceful keyboard interruption handling
+* :func:`print_exception` - Formatted exception output utility
+* :func:`command_wrap` - Comprehensive error handling decorator for Click commands
+
+.. note::
+   This module is designed to work exclusively with Click-based CLI applications
+   and requires the Click library to be installed.
+
+.. warning::
+   The command_wrap decorator should be applied after Click decorators to ensure
+   proper exception handling within the Click context.
+
+Example::
+
+    >>> import click
+    >>> from fiscai.entry.base import command_wrap, ClickErrorException
+    >>> 
+    >>> @click.command()
+    >>> @click.option('--input', required=True, help='Input file path')
+    >>> @command_wrap()
+    >>> def process_file(input):
+    ...     '''Process the input file with error handling.'''
+    ...     if not os.path.exists(input):
+    ...         raise ClickErrorException(f"File not found: {input}")
+    ...     click.echo(f"Processing {input}...")
+    >>> 
+    >>> # The command now has comprehensive error handling including
+    >>> # keyboard interrupts, unexpected errors, and custom exceptions
+
+"""
+
 import builtins
 import itertools
 import os
@@ -102,7 +144,7 @@ class ClickErrorException(ClickException):
         click.secho(self.format_message(), fg='red', file=sys.stderr)
 
 
-def print_exception(err: BaseException, print: Optional[Callable] = None):
+def print_exception(err: BaseException, print: Optional[Callable] = None) -> None:
     """
     Print formatted exception information including full traceback.
 
@@ -191,7 +233,7 @@ class KeyboardInterrupted(ClickWarningException):
     """
     exit_code = 0x7
 
-    def __init__(self, msg=None):
+    def __init__(self, msg: Optional[str] = None):
         """
         Initialize the keyboard interruption exception.
 
@@ -233,6 +275,7 @@ def command_wrap():
         >>> @click.option('--value', type=int, required=True)
         >>> @command_wrap()
         >>> def process_value(value):
+        ...     '''Calculate 100 divided by the input value.'''
         ...     result = 100 / value
         ...     click.echo(f"Result: {result}")
         >>> 
@@ -242,9 +285,29 @@ def command_wrap():
 
     """
 
-    def _decorator(func):
+    def _decorator(func: Callable) -> Callable:
+        """
+        Decorator that wraps a function with error handling logic.
+
+        :param func: The Click command function to wrap
+        :type func: Callable
+        :return: Wrapped function with error handling
+        :rtype: Callable
+
+        """
         @wraps(func)
         def _new_func(*args, **kwargs):
+            """
+            Wrapped function that executes the original function with error handling.
+
+            :param args: Positional arguments passed to the original function
+            :param kwargs: Keyword arguments passed to the original function
+            :return: Return value from the original function
+            :raises ClickException: Re-raised if caught from the original function
+            :raises KeyboardInterrupted: Raised when KeyboardInterrupt is caught
+            :raises SystemExit: Raised with exit code 1 for unexpected exceptions
+
+            """
             try:
                 return func(*args, **kwargs)
             except ClickException:

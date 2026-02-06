@@ -10,12 +10,20 @@ The module contains the following main components:
 * :func:`print_version` - Callback function to display version information
 * :func:`fiscai` - Main CLI group entry point
 
+.. note::
+   This module uses Click framework for command-line interface construction.
+   All CLI commands should be registered as subcommands to the main fiscai group.
+
 Example::
 
     >>> # Command line usage
     >>> # fiscai --version
     >>> # fiscai, version 0.0.1.
     >>> # Developed by HansBug (hansbug@buaa.edu.cn).
+    >>> 
+    >>> # Display help information
+    >>> # fiscai --help
+    >>> # Usage: fiscai [OPTIONS] COMMAND [ARGS]...
 
 """
 
@@ -25,18 +33,24 @@ from click.core import Context, Option
 from .base import CONTEXT_SETTINGS
 from ..config.meta import __TITLE__, __VERSION__, __AUTHOR__, __AUTHOR_EMAIL__, __DESCRIPTION__
 
+# Parse author information from metadata
 _raw_authors = [item.strip() for item in __AUTHOR__.split(',') if item.strip()]
 _raw_emails = [item.strip() for item in __AUTHOR_EMAIL__.split(',')]
+
+# Ensure email list matches author list length
 if len(_raw_emails) < len(_raw_authors):  # pragma: no cover
     _raw_emails += [None] * (len(_raw_authors) - len(_raw_emails))
 elif len(_raw_emails) > len(_raw_authors):  # pragma: no cover
     _raw_emails[len(_raw_authors) - 1] = tuple(_raw_emails[len(_raw_authors) - 1:])
     del _raw_emails[len(_raw_authors):]
 
+# Create author-email tuples for formatting
 _author_tuples = [
     (author, tuple([item for item in (email if isinstance(email, tuple) else ((email,) if email else ())) if item]))
     for author, email in zip(_raw_authors, _raw_emails)
 ]
+
+# Format author strings with optional email addresses
 _authors = [
     author if not emails else '{author} ({emails})'.format(author=author, emails=', '.join(emails))
     for author, emails in _author_tuples
@@ -52,6 +66,10 @@ def print_version(ctx: Context, param: Option, value: bool) -> None:
     command line. It prints the application title, version number, and developer
     information, then exits the application gracefully.
 
+    The function is designed to work as a Click callback and integrates with
+    Click's option processing system. It respects Click's resilient parsing mode
+    to avoid execution during shell completion or validation phases.
+
     :param ctx: Click context object containing execution state and configuration
     :type ctx: Context
     :param param: Metadata for the current parameter being processed (version option)
@@ -63,11 +81,17 @@ def print_version(ctx: Context, param: Option, value: bool) -> None:
 
     .. note::
        This function is designed to be used as a Click callback and should not
-       be called directly in normal code flow.
+       be called directly in normal code flow. It is automatically invoked when
+       the ``--version`` or ``-v`` flag is provided.
 
     .. note::
        The function respects Click's resilient parsing mode and will not execute
-       during completion or validation phases.
+       during completion or validation phases to avoid interfering with shell
+       completion mechanisms.
+
+    .. warning::
+       This function calls ``ctx.exit()`` which terminates the application.
+       No code after this function call will be executed in the normal flow.
 
     Example::
 
@@ -79,9 +103,15 @@ def print_version(ctx: Context, param: Option, value: bool) -> None:
     """
     if not value or ctx.resilient_parsing:
         return  # pragma: no cover
+    
+    # Display title and version information
     click.echo('{title}, version {version}.'.format(title=__TITLE__.capitalize(), version=__VERSION__))
+    
+    # Display author information if available
     if _authors:
         click.echo('Developed by {authors}.'.format(authors=', '.join(_authors)))
+    
+    # Exit the application
     ctx.exit()
 
 
@@ -99,7 +129,12 @@ def fiscai():
 
     The function is decorated with Click's group decorator to enable command
     grouping functionality, allowing subcommands to be registered and executed
-    under the main fiscai command.
+    under the main fiscai command. It uses custom context settings defined in
+    the base module and displays the application description from metadata.
+
+    The version option is configured as an eager option, meaning it will be
+    processed before other options and commands, allowing for immediate version
+    display and exit.
 
     :return: None - serves as a command group container
     :rtype: None
@@ -107,11 +142,17 @@ def fiscai():
     .. note::
        This function acts as a command group container and does not perform
        any operations directly. Actual functionality is provided by subcommands
-       registered to this group.
+       registered to this group using the ``@fiscai.command()`` decorator.
 
     .. note::
        Global options like ``--version`` and ``--help`` are available at this
-       level and apply to the entire CLI application.
+       level and apply to the entire CLI application. The help option names
+       are configured through CONTEXT_SETTINGS.
+
+    .. note::
+       The version option is marked as eager, which means it will be processed
+       before any subcommands, allowing users to check the version without
+       providing a valid subcommand.
 
     Example::
 
@@ -119,12 +160,21 @@ def fiscai():
         >>> # $ fiscai --help
         >>> # Usage: fiscai [OPTIONS] COMMAND [ARGS]...
         >>> #
-        >>> # A Python utility library for streamlined Large Language Model
-        >>> # interactions with unified API and conversation management.
+        >>> # A Python tool that uses LLMs to automatically categorize personal
+        >>> # financial transactions from bank/Alipay/WeChat PDF statements.
         >>> #
         >>> # Options:
         >>> #   -v, --version  Show fiscai's version information.
         >>> #   -h, --help     Show this message and exit.
+        >>> 
+        >>> # Display version information
+        >>> # $ fiscai --version
+        >>> # fiscai, version 0.0.1.
+        >>> # Developed by HansBug (hansbug@buaa.edu.cn).
+        >>> 
+        >>> # Execute a subcommand (when registered)
+        >>> # $ fiscai process --input statement.pdf
+        >>> # Processing financial statement...
 
     """
     pass  # pragma: no cover
