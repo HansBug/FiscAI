@@ -5,8 +5,8 @@
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/fiscai)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fiscai)
 
-![Loc](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/HansBug/f6212c5576d61750212301a636d6c794/raw/loc.json)
-![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/HansBug/f6212c5576d61750212301a636d6c794/raw/comments.json)
+![Loc](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/HansBug/c1cef562905cb638c5452931274b380f/raw/loc.json)
+![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/HansBug/c1cef562905cb638c5452931274b380f/raw/comments.json)
 [![Maintainability](https://api.codeclimate.com/v1/badges/5b6e14a915b63faeae90/maintainability)](https://codeclimate.com/github/HansBug/FiscAI/maintainability)
 [![codecov](https://codecov.io/gh/HansBug/FiscAI/branch/main/graph/badge.svg?token=XJVDP4EFAT)](https://codecov.io/gh/HansBug/FiscAI)
 
