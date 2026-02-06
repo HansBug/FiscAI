@@ -1,4 +1,4 @@
-# fiscai
+# FiscAI
 
 [![PyPI](https://img.shields.io/pypi/v/fiscai)](https://pypi.org/project/fiscai/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fiscai)
