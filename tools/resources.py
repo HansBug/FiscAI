@@ -121,7 +121,7 @@ def list_resources():
     List all non-Python resource files in the current project.
 
     This function walks through the project directory (determined by the location
-    of hbllmutils package) and yields absolute paths to all non-Python files,
+    of fiscai package) and yields absolute paths to all non-Python files,
     excluding __pycache__ directories.
 
     :yield: Absolute path to each resource file
@@ -139,7 +139,7 @@ def list_resources():
         Found: /project/templates/index.html
 
     """
-    from hbllmutils import __file__ as _mine_file
+    from fiscai import __file__ as _mine_file
 
     proj_dir = os.path.abspath(os.path.normpath(os.path.join(_mine_file, '..')))
     for root, _, files in os.walk(proj_dir):
