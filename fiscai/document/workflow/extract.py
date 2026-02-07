@@ -1,6 +1,7 @@
 import json
 import os.path
 
+import pandas as pd
 import pdfplumber
 from hbllmutils.model import LLMModelTyping
 from tqdm import tqdm
@@ -64,3 +65,31 @@ def extract_pdf_pages(doc_dir: str, method: Literal['text', 'table'] = 'table', 
                         ref_table = table_data
                     with open(dst_table_file, 'w') as f:
                         print(table_data, file=f)
+
+        params_rows = []
+        table_lines = []
+        for page_num, page in enumerate(tqdm(pdf.pages, desc=f'Merge Pages'), start=1):
+            dst_params_file = os.path.join(doc_dir, f'page-{page_num}-params.json')
+            dst_table_file = os.path.join(doc_dir, f'page-{page_num}-table.csv')
+
+            with open(dst_params_file, 'r') as f:
+                params_rows.append({item['name']: item['value'] for item in json.load(f)})
+
+            with open(dst_table_file, 'r') as f:
+                lines = f.read().strip().splitlines(keepends=False)
+                if not table_lines:
+                    table_lines.extend(lines)
+                else:
+                    table_lines.extend(lines[1:])
+
+        dst_merged_table_file = os.path.join(doc_dir, 'page-all-table.csv')
+        dst_merged_params_file = os.path.join(doc_dir, 'page-all-params.csv')
+        with file_recovery_on_error([
+            dst_merged_table_file,
+            dst_merged_params_file,
+        ]):
+            with open(dst_merged_table_file, 'w') as f:
+                print(os.linesep.join(table_lines), file=f, end='')
+
+            df = pd.DataFrame(params_rows)
+            df.to_csv(dst_merged_params_file, index=False)
