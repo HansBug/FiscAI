@@ -1,5 +1,6 @@
 hbutils>=0.14.2
-hbllmutils>=0.4.0
+hbllmutils>=0.4.1
 tqdm
 click
 pandas
+pdfplumber
