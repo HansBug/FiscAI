@@ -173,12 +173,16 @@ def extract_params_from_page(page: Page, model: LLMModelTyping = None,
     This convenience function creates a :class:`ParamsExtractTask` instance and
     uses it to extract key-value parameters from the provided PDF page. The
     function extracts text from the page and passes it to the LLM for analysis.
+    Optionally, reference data can be provided to guide the extraction process.
 
     :param page: The PDF page object to extract parameters from.
     :type page: Page
     :param model: The LLM model to use for extraction. If None, uses the default
                  model configured in the environment.
     :type model: LLMModelTyping, optional
+    :param ref_data: Optional reference data to guide parameter extraction. Should be
+                    a list of dictionaries containing example parameter structures.
+    :type ref_data: Optional[List[dict]]
     :param params: Additional keyword arguments to pass to the LLM task's
                   ask_then_parse method (e.g., max_retries, temperature).
     :return: Dictionary containing the extracted parameters as key-value pairs.
@@ -209,12 +213,16 @@ def extract_params_from_page(page: Page, model: LLMModelTyping = None,
         ...     print(params)
         {'invoice_number': 'INV-2024-001', 'date': '2024-01-15', 'total': 1250.00}
         >>> 
-        >>> # Extract with custom parameters
+        >>> # Extract with reference data
+        >>> ref_data = [
+        ...     {'invoice_number': 'INV-2024-000', 'date': '2024-01-01', 'total': 1000.00}
+        ... ]
         >>> with PDF.open('form.pdf') as pdf:
         ...     page = pdf.pages[0]
         ...     params = extract_params_from_page(
         ...         page,
         ...         model='gpt-4',
+        ...         ref_data=ref_data,
         ...         max_retries=3,
         ...         temperature=0.2
         ...     )
@@ -476,7 +484,8 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
     This convenience function provides a unified interface for extracting table
     data from PDF pages using either table-based or text-based extraction methods.
     It automatically creates the appropriate task instance based on the specified
-    method and processes the page content.
+    method and processes the page content. Optionally, reference data can be
+    provided to guide the extraction and formatting process.
 
     The function supports two extraction methods:
     
@@ -494,6 +503,9 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
     :param return_dataframe: If True, return a pandas DataFrame. If False,
                             return raw CSV text. Defaults to True.
     :type return_dataframe: bool
+    :param ref_data: Optional reference DataFrame to guide table extraction and
+                    formatting. Helps the LLM understand the expected structure.
+    :type ref_data: Optional[pd.DataFrame]
     :param params: Additional keyword arguments to pass to the task's
                   ask_then_parse method (e.g., max_retries, temperature).
     :return: Either a pandas DataFrame or CSV text string containing the
@@ -549,13 +561,20 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
         Laptop,10,999.99
         Mouse,50,25.00
         >>> 
-        >>> # Extract with custom parameters
+        >>> # Extract with reference data
+        >>> import pandas as pd
+        >>> ref_df = pd.DataFrame({
+        ...     'Product': ['Sample'],
+        ...     'Quantity': [0],
+        ...     'Price': [0.0]
+        ... })
         >>> with PDF.open('complex.pdf') as pdf:
         ...     page = pdf.pages[0]
         ...     df = extract_table_from_page(
         ...         page,
         ...         model='gpt-4',
         ...         method='text',
+        ...         ref_data=ref_df,
         ...         max_retries=10,
         ...         temperature=0.3
         ...     )
@@ -572,7 +591,7 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
 
     """
     with io.StringIO() as sf:
-        if ref_data:
+        if ref_data is not None:
             print(f'# Reference Data', file=sf)
             print(f'', file=sf)
             print(f'```', file=sf)
