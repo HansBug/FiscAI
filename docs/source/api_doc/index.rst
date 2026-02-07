@@ -10,5 +10,8 @@ fiscai
     :maxdepth: 3
 
     config/index
+    document/index
     entry/index
+    task/index
+    utils/index
 

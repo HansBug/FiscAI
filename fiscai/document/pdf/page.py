@@ -59,7 +59,6 @@ import os.path
 from pprint import pformat
 from typing import Optional, List
 
-import pandas as pd
 from hbllmutils.history import LLMHistory
 from hbllmutils.model import LLMModelTyping
 from hbllmutils.template import quick_render
@@ -477,7 +476,7 @@ class TextBasedFixTask(CSVReturnLLMTask):
 
 def extract_table_from_page(page: Page, model: LLMModelTyping = None,
                             method: Literal['text', 'table'] = 'table', return_dataframe: bool = True,
-                            ref_data: Optional[pd.DataFrame] = None, **params):
+                            ref_data: Optional[str] = None, **params):
     """
     Extract table data from a PDF page using LLM-based processing.
 
@@ -503,9 +502,9 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
     :param return_dataframe: If True, return a pandas DataFrame. If False,
                             return raw CSV text. Defaults to True.
     :type return_dataframe: bool
-    :param ref_data: Optional reference DataFrame to guide table extraction and
+    :param ref_data: Optional reference data string to guide table extraction and
                     formatting. Helps the LLM understand the expected structure.
-    :type ref_data: Optional[pd.DataFrame]
+    :type ref_data: Optional[str]
     :param params: Additional keyword arguments to pass to the task's
                   ask_then_parse method (e.g., max_retries, temperature).
     :return: Either a pandas DataFrame or CSV text string containing the
@@ -562,19 +561,14 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
         Mouse,50,25.00
         >>> 
         >>> # Extract with reference data
-        >>> import pandas as pd
-        >>> ref_df = pd.DataFrame({
-        ...     'Product': ['Sample'],
-        ...     'Quantity': [0],
-        ...     'Price': [0.0]
-        ... })
+        >>> ref_data = "Product,Quantity,Price\\nSample,0,0.0"
         >>> with PDF.open('complex.pdf') as pdf:
         ...     page = pdf.pages[0]
         ...     df = extract_table_from_page(
         ...         page,
         ...         model='gpt-4',
         ...         method='text',
-        ...         ref_data=ref_df,
+        ...         ref_data=ref_data,
         ...         max_retries=10,
         ...         temperature=0.3
         ...     )
@@ -598,31 +592,39 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
             print(ref_data, file=sf)
             print(f'```', file=sf)
 
-        print(f'# Text To Extract Table From', file=sf)
-        print(f'', file=sf)
-        print(f'```json', file=sf)
-        print(json.dumps(page.extract_table()), file=sf)
-        print(f'```', file=sf)
+        if method == 'table':
+            print(f'# Text To Extract Table From', file=sf)
+            print(f'', file=sf)
+            print(f'```json', file=sf)
+            print(json.dumps(page.extract_table()), file=sf)
+            print(f'```', file=sf)
 
-        user_prompt = sf.getvalue()
+            user_prompt = sf.getvalue()
+            task = TableBasedFixTask(
+                model=model,
+                return_dataframe=return_dataframe,
+            )
+            return task.ask_then_parse(
+                input_content=user_prompt,
+                **params
+            )
 
-    if method == 'table':
-        task = TableBasedFixTask(
-            model=model,
-            return_dataframe=return_dataframe,
-        )
-        return task.ask_then_parse(
-            input_content=user_prompt,
-            **params
-        )
-    elif method == 'text':
-        task = TextBasedFixTask(
-            model=model,
-            return_dataframe=return_dataframe,
-        )
-        return task.ask_then_parse(
-            input_content=user_prompt,
-            **params
-        )
-    else:
-        raise ValueError(f'Unknown extract method - {method!r}.')
+        elif method == 'text':
+            print(f'# Text To Extract Table From', file=sf)
+            print(f'', file=sf)
+            print(f'```', file=sf)
+            print(page.extract_text(), file=sf)
+            print(f'```', file=sf)
+
+            user_prompt = sf.getvalue()
+            task = TextBasedFixTask(
+                model=model,
+                return_dataframe=return_dataframe,
+            )
+            return task.ask_then_parse(
+                input_content=user_prompt,
+                **params
+            )
+
+        else:
+            raise ValueError(f'Unknown extract method - {method!r}.')

@@ -10,4 +10,5 @@ fiscai.document
     :maxdepth: 3
 
     pdf/index
+    workflow/index
 
