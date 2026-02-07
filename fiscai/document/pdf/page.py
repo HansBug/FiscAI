@@ -53,9 +53,13 @@ Example::
     ...     print(csv_text)
 
 """
-
+import io
+import json
 import os.path
+from pprint import pformat
+from typing import Optional, List
 
+import pandas as pd
 from hbllmutils.history import LLMHistory
 from hbllmutils.model import LLMModelTyping
 from hbllmutils.template import quick_render
@@ -161,7 +165,8 @@ class ParamsExtractTask(JSONReturnLLMTask):
         )
 
 
-def extract_params_from_page(page: Page, model: LLMModelTyping = None, **params):
+def extract_params_from_page(page: Page, model: LLMModelTyping = None,
+                             ref_data: Optional[List[dict]] = None, **params):
     """
     Extract structured parameters from a PDF page using LLM analysis.
 
@@ -225,10 +230,24 @@ def extract_params_from_page(page: Page, model: LLMModelTyping = None, **params)
 
     """
     task = ParamsExtractTask(model=model)
-    return task.ask_then_parse(
-        input_content=page.extract_text(),
-        **params
-    )
+    with io.StringIO() as sf:
+        if ref_data:
+            print(f'# Reference Data', file=sf)
+            print(f'', file=sf)
+            print(f'```json', file=sf)
+            print(pformat(ref_data), file=sf)
+            print(f'```', file=sf)
+
+        print(f'# Text To Extract Params From', file=sf)
+        print(f'', file=sf)
+        print(f'```text', file=sf)
+        print(page.extract_text(), file=sf)
+        print(f'```', file=sf)
+
+        return task.ask_then_parse(
+            input_content=sf.getvalue(),
+            **params
+        )
 
 
 class TableBasedFixTask(CSVReturnLLMTask):
@@ -450,7 +469,7 @@ class TextBasedFixTask(CSVReturnLLMTask):
 
 def extract_table_from_page(page: Page, model: LLMModelTyping = None,
                             method: Literal['text', 'table'] = 'table', return_dataframe: bool = True,
-                            **params):
+                            ref_data: Optional[pd.DataFrame] = None, **params):
     """
     Extract table data from a PDF page using LLM-based processing.
 
@@ -552,13 +571,29 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
         ...             print(f"Failed to extract table: {e}")
 
     """
+    with io.StringIO() as sf:
+        if ref_data:
+            print(f'# Reference Data', file=sf)
+            print(f'', file=sf)
+            print(f'```', file=sf)
+            print(ref_data, file=sf)
+            print(f'```', file=sf)
+
+        print(f'# Text To Extract Table From', file=sf)
+        print(f'', file=sf)
+        print(f'```json', file=sf)
+        print(json.dumps(page.extract_table()), file=sf)
+        print(f'```', file=sf)
+
+        user_prompt = sf.getvalue()
+
     if method == 'table':
         task = TableBasedFixTask(
             model=model,
             return_dataframe=return_dataframe,
         )
         return task.ask_then_parse(
-            str(page.extract_table()),
+            input_content=user_prompt,
             **params
         )
     elif method == 'text':
@@ -567,7 +602,7 @@ def extract_table_from_page(page: Page, model: LLMModelTyping = None,
             return_dataframe=return_dataframe,
         )
         return task.ask_then_parse(
-            page.extract_text(),
+            input_content=user_prompt,
             **params
         )
     else:
