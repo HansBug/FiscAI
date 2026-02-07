@@ -35,6 +35,14 @@ OUTPUT REQUIREMENTS:
 - Ensure each transaction record is on a separate row
 - Handle empty fields appropriately (leave blank rather than adding placeholders)
 
+FORMAT COMPLIANCE:
+
+- **If a reference data format is provided in the user prompt, strictly follow that exact format** - column names,
+  order, and structure must match the reference exactly
+- **If no reference format is provided**, use your best judgment to create appropriate column headers based on the
+  identified data fields
+- Always prioritize format consistency with any provided reference over general formatting preferences
+
 QUALITY CHECKS:
 
 - Verify numerical data alignment and decimal places

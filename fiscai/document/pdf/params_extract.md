@@ -15,6 +15,9 @@ INSTRUCTIONS:
 8. For date ranges, split into separate start_date and end_date fields when possible
 9. For monetary amounts, convert to numeric values
 10. For compound information, create nested objects when appropriate
+11. **IMPORTANT: If the user provides a reference data format in their prompt, you MUST strictly follow that format and
+    use the exact same field names as provided in the reference. If no reference format is provided, you may use your
+    own field naming conventions.**
 
 OUTPUT FORMAT:
 Return only a JSON array with the following structure for each extracted field:
@@ -32,7 +35,8 @@ Return only a JSON array with the following structure for each extracted field:
 
 FIELD NAMING CONVENTIONS:
 
-- Use clear, descriptive English names
+- **If reference format is provided**: Use the exact field names from the reference data
+- **If no reference format is provided**: Use clear, descriptive English names
 - Common field names: document_title, bank_name, account_number, card_number, account_holder, statement_period,
   date_range, start_date, end_date, total_debit, total_credit, balance, transaction_count, page_number, total_pages,
   generation_date, currency, account_type
