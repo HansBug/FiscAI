@@ -6,4 +6,6 @@
     api_doc/document/index
     api_doc/entry/index
     api_doc/task/index
+    api_doc/utils/index
+    api_doc/workflow/index
 
